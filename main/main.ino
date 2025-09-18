@@ -6,19 +6,30 @@
 #include "Configs/ProgramRunConfigs.h"
 #include "Configs/PinAssignments.h"
 #include "ArduinoJson.h"
+#include "esp_log.h"
 
 void setup() {
     /** Debugging setup */
     Serial.begin(115200);
     const char* TAG = "SETUP";  // Log tag
-    esp_log_level_set("*", ESP_LOG_DEBUG);  // Set all log tags to debug level
-
-    /** Components setup */
-    esp_now_receiver_setup();
-    ble_setup();
+    ESP_LOGI(TAG, "Starting setup...");
 
     // Creation status flag for all FreeRTOS kernel objects
     bool creationStatus = 1; 
+    
+    /** RTOS Kernel semaphores creation */
+    // Binary Semaphores to signal when data is ready from ESP1, ESP2, and ESP3
+    creationStatus &= create_and_check_binary_sem(xSem_Msg1Ready, "Semaphore - Msg 1 Ready");
+    creationStatus &= create_and_check_binary_sem(xSem_Msg2Ready, "Semaphore - Msg 2 Ready");
+    creationStatus &= create_and_check_binary_sem(xSem_Msg3Ready, "Semaphore - Msg 3 Ready");
+    // Mutex to protect shared resource (JSON Documents doc1, doc2, doc3)
+    creationStatus &= create_and_check_sem(xSem_Msg1Guard, "Semaphore - Msg 1 Guard");
+    creationStatus &= create_and_check_sem(xSem_Msg2Guard, "Semaphore - Msg 2 Guard");
+    creationStatus &= create_and_check_sem(xSem_Msg3Guard, "Semaphore - Msg 3 Guard");
+
+    /** Components setup */
+    ble_setup();
+    esp_now_receiver_setup();
 
     /** RTOS Task Creation */
     creationStatus &= create_and_check_task(ENABLE_T1_SEND_TO_BLUETOOTH, task_send_to_bluetooth, task1Name, configMINIMAL_STACK_SIZE*4, 1, &xTask_SendToBluetooth);
@@ -28,16 +39,13 @@ void setup() {
         ESP_LOGW(TAG, "Some RTOS kernel objects have failed to be created");
     }
     else {    
-        // Display blinking LED to indicate start of program.
-        pinMode(LED_STATUS_PIN, OUTPUT);
-        digitalWrite(LED_STATUS_PIN, HIGH); 
         ESP_LOGI(TAG, "Setup successfully completed");
         vTaskDelay(pdMS_TO_TICKS(500));
-        digitalWrite(LED_STATUS_PIN, LOW);
     }
 
 }
 
 void loop() {
-    vTaskDelay(pdTICKS_TO_MS(10000));
+    // Nothing to do here - everything is handled in tasks defined in other files.
+    vTaskDelay(pdMS_TO_TICKS(10000));
 }

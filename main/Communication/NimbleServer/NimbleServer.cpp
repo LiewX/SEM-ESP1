@@ -22,7 +22,7 @@ void ble_setup () {
 
     // Create characteristic (Notify enabled)
     pCharacteristic = pService->createCharacteristic(
-        "27a15d46-f8ba-45ba-b474-f96222bcb945",
+        "F00D",
         // NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY
         NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::NOTIFY
     );
@@ -35,7 +35,7 @@ void ble_setup () {
 
     /** Create an advertising instance and add the services to the advertised data */
     NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
-    pAdvertising->setName("SEM-NimBLE-Server");
+    pAdvertising->setName("SEM");
     pAdvertising->addServiceUUID(pService->getUUID());
     /**
      *  If your device is battery powered you may consider setting scan response

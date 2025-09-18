@@ -14,6 +14,8 @@ uint8_t targetEsp32Mac3[6] = {0x44, 0x1D, 0x64, 0xF9, 0x54, 0x3C};
 
 // callback function that will be executed when data is received
 void on_data_received(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
     // Get MAC address of sender
     char macStr[18];
     snprintf(macStr, sizeof(macStr), "%02X:%02X:%02X:%02X:%02X:%02X", mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
@@ -23,7 +25,7 @@ void on_data_received(const uint8_t *mac_addr, const uint8_t *incomingData, int 
         memcpy(&receivedData2, incomingData, sizeof(receivedData2)); // Copy to msg struct
         update_json_doc(EspID::ESP2);
         // Signal, through sempahore, to "Task 1 - Send to Bluetooth" that data is ready from esp target 2
-        xSemaphoreGive(xSem_Msg2Ready);
+        xSemaphoreGiveFromISR(xSem_Msg2Ready, &xHigherPriorityTaskWoken);
         ESP_LOGV(TAG, "Message from ESP2. Bytes received: %d", len);
     }
     
@@ -32,14 +34,17 @@ void on_data_received(const uint8_t *mac_addr, const uint8_t *incomingData, int 
         memcpy(&receivedData3, incomingData, sizeof(receivedData3)); // Copy to msg struct
         update_json_doc(EspID::ESP3);
         // Signal, through sempahore, to "Task 1 - Send to Bluetooth" that data is ready from esp target 3
-        xSemaphoreGive(xSem_Msg3Ready);
+        xSemaphoreGiveFromISR(xSem_Msg3Ready, &xHigherPriorityTaskWoken);
         ESP_LOGV(TAG, "Message from ESP3. Bytes received: %d", len);
     }
 
     else {
-        ESP_LOGI(TAG, "Unregistered message from: %s\n", macStr);
+        ESP_LOGI(TAG, "Unregistered message from: %s", macStr);
     }
 
+    if (xHigherPriorityTaskWoken) {
+        portYIELD_FROM_ISR(); // Request context switch to higher priority task
+    }
 }
 
 void esp_now_receiver_setup() {

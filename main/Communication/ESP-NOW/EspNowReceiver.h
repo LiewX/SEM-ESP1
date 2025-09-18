@@ -10,6 +10,7 @@
 typedef struct esp_now_msg_struct_2 {
     float power;
     float efficiency;
+    float batteryCapacity;
 } esp_now_msg_struct_2;
 
 // Structure on receiving data from ESP32 No. 3. Must match transmitter msg struct

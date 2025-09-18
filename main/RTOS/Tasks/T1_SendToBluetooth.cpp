@@ -9,7 +9,8 @@ static const char* TAG = "TASK - SEND TO BLUETOOTH";
 // Task Handle
 TaskHandle_t xTask_SendToBluetooth = nullptr;
 
-// Semaphore Handle
+/** Semaphore Handle */
+// Binary Semaphores to signal when data is ready from ESP1, ESP2, and ESP3
 SemaphoreHandle_t xSem_Msg1Ready = nullptr;
 SemaphoreHandle_t xSem_Msg2Ready = nullptr;
 SemaphoreHandle_t xSem_Msg3Ready = nullptr;
@@ -29,19 +30,28 @@ void task_send_to_bluetooth(void *pvParameters) {
         status2 = xSemaphoreTake(xSem_Msg2Ready, 0);
         status3 = xSemaphoreTake(xSem_Msg3Ready, 0);
 
+        // Skip sending if nothing is ready
+        if (status1 == pdFALSE && status2 == pdFALSE && status3 == pdFALSE) {
+            vTaskDelayUntil(&xLastWakeTime, xFrequency);
+            continue;
+        }
+
         mergedDoc.clear();  // Clear previous values
 
         if (status1 == pdTRUE) {
-            // Insert msg 1 to merged json doc
-            mergedDoc.set(doc1);  // overwrite mergedDoc
+            xSemaphoreTake(xSem_Msg1Guard, portMAX_DELAY);
+            mergedDoc.set(doc1);  // overwrite mergedDoc with doc1
+            xSemaphoreGive(xSem_Msg1Guard);
         }
         if (status2 == pdTRUE) {
-            // Insert msg 2 to merged json doc
-            merge_docs(mergedDoc, doc2);
+            xSemaphoreTake(xSem_Msg2Guard, portMAX_DELAY);
+            merge_docs(mergedDoc, doc2);  // Insert msg 2 to merged json doc
+            xSemaphoreGive(xSem_Msg2Guard);
         }
         if (status3 == pdTRUE) {
-            // Insert msg 3 to merged json doc
-            merge_docs(mergedDoc, doc3);            
+            xSemaphoreTake(xSem_Msg3Guard, portMAX_DELAY);
+            merge_docs(mergedDoc, doc3);  // Insert msg 3 to merged json doc
+            xSemaphoreGive(xSem_Msg3Guard);
         }
         
         /** Serialize message  */
@@ -49,11 +59,11 @@ void task_send_to_bluetooth(void *pvParameters) {
         
         // Append newline if there is still room
         // Comment this during launch
-        // if (len < sizeof(buffer) - 1) {
-        //     buffer[len] = '\n';      // add newline
-        //     buffer[len + 1] = '\0';  // null-terminate
-        //     len++;                   // length now includes newline
-        // }
+        if (len < sizeof(buffer) - 1) {
+            buffer[len] = '\n';      // add newline
+            buffer[len + 1] = '\0';  // null-terminate
+            len++;                   // length now includes newline
+        }
 
         /** Send to bluetooth */
         if (len > 0) {

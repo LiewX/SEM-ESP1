@@ -14,6 +14,16 @@ bool create_and_check_sem(SemaphoreHandle_t &sem, const char* semName) {
     return true;
 }
 
+bool create_and_check_binary_sem(SemaphoreHandle_t &sem, const char* semName) {
+    sem = xSemaphoreCreateBinary();
+    if (sem == NULL) {
+        ESP_LOGW(TAG, "Failed to create binary semaphore '%s'", semName);
+        return false;
+    }
+    ESP_LOGI(TAG, "'%s' created successfully", semName);
+    return true;
+}
+
 bool create_and_check_queue(QueueHandle_t &queue, const char* queueName, size_t size, size_t itemSize) {
     queue = xQueueCreate(size, itemSize);
     if (queue == NULL) {

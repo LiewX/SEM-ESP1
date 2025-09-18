@@ -9,6 +9,13 @@
  */
 bool create_and_check_sem(SemaphoreHandle_t &sem, const char* semName);
 
+/** 
+ *  @brief Binary semaphore creation and checking function
+ *  @param sem semaphore handle
+ *  @param semName semaphore name
+ *  @return 1 if successful; if not, return 0
+ */
+bool create_and_check_binary_sem(SemaphoreHandle_t &sem, const char* semName);
 
 /**
  *  @brief Queue creation and checking function

@@ -6,25 +6,35 @@ JsonDocument doc2; // JSON Document for ESP2
 JsonDocument doc3; // JSON Document for ESP3
 JsonDocument mergedDoc;
 
-/**
- * @brief Updates corresponding JSON doc based on specified ESP target
- * @param espNumber
- */
+// Mutex to protect shared resource (JSON Documents doc1, doc2, doc3)
+SemaphoreHandle_t xSem_Msg1Guard = nullptr;
+SemaphoreHandle_t xSem_Msg2Guard = nullptr;
+SemaphoreHandle_t xSem_Msg3Guard = nullptr;
+
 void update_json_doc(EspID espNumber) {
     switch (espNumber) {
         case EspID::ESP1: {
-            // Todo: get RPM value. Note: this value change can be in another function.
+            // Todo: get sensor values etc. Note: this value change can be in another function.
             // doc1["RPM"] = ;
+            // doc1["motorTemp"] = ;
+            // doc1["fanPowerPercent"] = ;
             break;
         }
         case EspID::ESP2: {
-            doc2["power"]       = receivedData2.power;
-            doc2["efficiency"]  = receivedData2.efficiency;
+            xSemaphoreTake(xSem_Msg2Guard, portMAX_DELAY);
+            // Update JSON document with received data from ESP2
+            doc2["power"]           = receivedData2.power;
+            doc2["efficiency"]      = receivedData2.efficiency;
+            doc2["batteryCapacity"] = receivedData2.batteryCapacity;
+            xSemaphoreGive(xSem_Msg2Guard);
             break;
         }
         case EspID::ESP3: {
-            doc3["Pos_x"]       = receivedData3.posX;
-            doc3["Pos_y"]       = receivedData3.posY;
+            xSemaphoreTake(xSem_Msg3Guard, portMAX_DELAY);
+            // Update JSON document with received data from ESP3
+            doc3["pos_x"]   = receivedData3.posX;
+            doc3["pos_y"]   = receivedData3.posY;
+            xSemaphoreGive(xSem_Msg3Guard);
             break;
         }
         default:
