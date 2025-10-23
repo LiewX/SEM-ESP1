@@ -15,7 +15,6 @@ SemaphoreHandle_t xSem_Msg1Ready = nullptr;
 SemaphoreHandle_t xSem_Msg2Ready = nullptr;
 SemaphoreHandle_t xSem_Msg3Ready = nullptr;
 
-// Task Definition
 void task_send_to_bluetooth(void *pvParameters) {
     const TickType_t xFrequency = pdMS_TO_TICKS(SEND_TO_BLUETOOTH_PERIOD); // Set task running frequency
     char buffer[256];
@@ -30,49 +29,54 @@ void task_send_to_bluetooth(void *pvParameters) {
         status2 = xSemaphoreTake(xSem_Msg2Ready, 0);
         status3 = xSemaphoreTake(xSem_Msg3Ready, 0);
 
-        // Skip sending if nothing is ready
-        if (status1 == pdFALSE && status2 == pdFALSE && status3 == pdFALSE) {
+        // If any data is ready, merge and send
+        if (status1 == pdTRUE || status2 == pdTRUE || status3 == pdTRUE) {
+            mergedDoc.clear();  // Clear previous values
+
+            if (status1 == pdTRUE) {
+                xSemaphoreTake(xSem_Msg1Guard, portMAX_DELAY);
+                mergedDoc.set(doc1);  // overwrite mergedDoc with doc1
+                xSemaphoreGive(xSem_Msg1Guard);
+            }
+            if (status2 == pdTRUE) {
+                xSemaphoreTake(xSem_Msg2Guard, portMAX_DELAY);
+                merge_docs(mergedDoc, doc2);  // Insert msg 2 to merged json doc
+                xSemaphoreGive(xSem_Msg2Guard);
+            }
+            if (status3 == pdTRUE) {
+                xSemaphoreTake(xSem_Msg3Guard, portMAX_DELAY);
+                merge_docs(mergedDoc, doc3);  // Insert msg 3 to merged json doc
+                xSemaphoreGive(xSem_Msg3Guard);
+            }
+            
+            /** Serialize message  */
+            size_t len = serializeJson(mergedDoc, buffer);
+            
+            // Append newline if there is still room
+            // Comment this during launch
+            if (len < sizeof(buffer) - 1) {
+                buffer[len] = '\n';      // add newline
+                buffer[len + 1] = '\0';  // null-terminate
+                len++;                   // length now includes newline
+            }
+
+            /** Send to bluetooth */
+            if (len > 0) {
+                send_bluetooth_msg(buffer);
+            } else {
+                ESP_LOGW(TAG, "JSON serialization failed");
+            }
+
+            // Delay until the next execution time
+            vTaskDelayUntil(&xLastWakeTime, xFrequency);
+        }
+        
+        /** No data ready, just delay until next cycle */
+        else {
             vTaskDelayUntil(&xLastWakeTime, xFrequency);
             continue;
         }
 
-        mergedDoc.clear();  // Clear previous values
-
-        if (status1 == pdTRUE) {
-            xSemaphoreTake(xSem_Msg1Guard, portMAX_DELAY);
-            mergedDoc.set(doc1);  // overwrite mergedDoc with doc1
-            xSemaphoreGive(xSem_Msg1Guard);
-        }
-        if (status2 == pdTRUE) {
-            xSemaphoreTake(xSem_Msg2Guard, portMAX_DELAY);
-            merge_docs(mergedDoc, doc2);  // Insert msg 2 to merged json doc
-            xSemaphoreGive(xSem_Msg2Guard);
-        }
-        if (status3 == pdTRUE) {
-            xSemaphoreTake(xSem_Msg3Guard, portMAX_DELAY);
-            merge_docs(mergedDoc, doc3);  // Insert msg 3 to merged json doc
-            xSemaphoreGive(xSem_Msg3Guard);
-        }
         
-        /** Serialize message  */
-        size_t len = serializeJson(mergedDoc, buffer);
-        
-        // Append newline if there is still room
-        // Comment this during launch
-        if (len < sizeof(buffer) - 1) {
-            buffer[len] = '\n';      // add newline
-            buffer[len + 1] = '\0';  // null-terminate
-            len++;                   // length now includes newline
-        }
-
-        /** Send to bluetooth */
-        if (len > 0) {
-            send_bluetooth_msg(buffer);
-        } else {
-            ESP_LOGW(TAG, "JSON serialization failed");
-        }
-
-        // Delay until the next execution time
-        vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
 }

@@ -15,14 +15,16 @@ void update_json_doc(EspID espNumber) {
     switch (espNumber) {
         case EspID::ESP1: {
             // Todo: get sensor values etc. Note: this value change can be in another function.
+            // xSemaphoreTake(xSem_Msg1Guard, portMAX_DELAY);
             // doc1["RPM"] = ;
             // doc1["motorTemp"] = ;
             // doc1["fanPowerPercent"] = ;
+            // xSemaphoreGive(xSem_Msg1Guard);
             break;
         }
         case EspID::ESP2: {
             xSemaphoreTake(xSem_Msg2Guard, portMAX_DELAY);
-            // Update JSON document with received data from ESP2
+            // Update JSON document with received ESP-NOW data from ESP2
             doc2["power"]           = receivedData2.power;
             doc2["efficiency"]      = receivedData2.efficiency;
             doc2["batteryCapacity"] = receivedData2.batteryCapacity;
@@ -31,7 +33,7 @@ void update_json_doc(EspID espNumber) {
         }
         case EspID::ESP3: {
             xSemaphoreTake(xSem_Msg3Guard, portMAX_DELAY);
-            // Update JSON document with received data from ESP3
+            // Update JSON document with received ESP-NOW data from ESP3
             doc3["pos_x"]   = receivedData3.posX;
             doc3["pos_y"]   = receivedData3.posY;
             xSemaphoreGive(xSem_Msg3Guard);

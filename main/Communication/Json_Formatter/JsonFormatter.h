@@ -30,45 +30,6 @@ enum class EspID : uint32_t {
  */
 void update_json_doc(EspID espNumber);
 
-// /**
-//  * @brief 
-//  * @param espNumber
-//  * @param args
-//  */
-// // Variadic template function to update JSON docs with variable number of arguments
-// template<typename... Args>
-// void update_json_doc(EspID espNumber, Args... args) {
-//     // Pack all arguments into a tuple for indexed access
-//     auto values = std::tuple<Args...>(args...);
-
-//     switch (espNumber) {
-//         case EspID::ESP1: {
-//             doc1["time"]  = std::get<0>(values);
-//             doc1["power"] = std::get<1>(values);
-//             doc1["speed"] = std::get<2>(values);
-//             break;
-//         }
-
-//         case EspID::ESP2: {
-//             doc2["time"]  = std::get<0>(values);
-//             doc2["temp"]  = std::get<1>(values);
-//             break;
-//         }
-
-//         case EspID::ESP3: {
-//             doc3["time"]   = std::get<0>(values);
-//             doc3["power"]  = std::get<1>(values);
-//             doc3["speed"]  = std::get<2>(values);
-//             break;
-//         }
-
-//         default:
-//             // Wrong ESP number provided
-//             ESP_LOGW("JSON FORMATTING", "Wrong ESP Number selected to format JSON.");
-//             break;
-//     }
-// }
-
 /**
  * @brief
  * @param dest

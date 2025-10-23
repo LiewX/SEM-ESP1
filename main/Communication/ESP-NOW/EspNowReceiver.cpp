@@ -12,7 +12,7 @@ esp_now_msg_struct_3 receivedData3; // Struct matching ESP3 msg
 uint8_t targetEsp32Mac2[6] = {0x44, 0x1D, 0x64, 0xF8, 0x2B, 0xFC};
 uint8_t targetEsp32Mac3[6] = {0x44, 0x1D, 0x64, 0xF9, 0x54, 0x3C};
 
-// callback function that will be executed when data is received
+// Callback function that will be executed when data is received
 void on_data_received(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -24,7 +24,7 @@ void on_data_received(const uint8_t *mac_addr, const uint8_t *incomingData, int 
     if (memcmp(mac_addr, targetEsp32Mac2, 6) == 0) {
         memcpy(&receivedData2, incomingData, sizeof(receivedData2)); // Copy to msg struct
         update_json_doc(EspID::ESP2);
-        // Signal, through sempahore, to "Task 1 - Send to Bluetooth" that data is ready from esp target 2
+        // Signal, through semaphore, to "Task 1 - Send to Bluetooth" that data is ready from esp target 2
         xSemaphoreGiveFromISR(xSem_Msg2Ready, &xHigherPriorityTaskWoken);
         ESP_LOGV(TAG, "Message from ESP2. Bytes received: %d", len);
     }
@@ -33,7 +33,7 @@ void on_data_received(const uint8_t *mac_addr, const uint8_t *incomingData, int 
     else if (memcmp(mac_addr, targetEsp32Mac3, 6) == 0) {
         memcpy(&receivedData3, incomingData, sizeof(receivedData3)); // Copy to msg struct
         update_json_doc(EspID::ESP3);
-        // Signal, through sempahore, to "Task 1 - Send to Bluetooth" that data is ready from esp target 3
+        // Signal, through semaphore, to "Task 1 - Send to Bluetooth" that data is ready from esp target 3
         xSemaphoreGiveFromISR(xSem_Msg3Ready, &xHigherPriorityTaskWoken);
         ESP_LOGV(TAG, "Message from ESP3. Bytes received: %d", len);
     }
@@ -57,7 +57,6 @@ void esp_now_receiver_setup() {
         return;
     }
 
-    // Once ESP-Now is successfully Init, we will register for receiver callback to
-    // get receiver packer info
+    // Once ESP-Now is successfully Init, register for receiver callback to get receiver packet info
     esp_now_register_recv_cb(on_data_received);
 }

@@ -26,7 +26,7 @@ void setup() {
     creationStatus &= create_and_check_sem(xSem_Msg1Guard, "Semaphore - Msg 1 Guard");
     creationStatus &= create_and_check_sem(xSem_Msg2Guard, "Semaphore - Msg 2 Guard");
     creationStatus &= create_and_check_sem(xSem_Msg3Guard, "Semaphore - Msg 3 Guard");
-
+    
     /** Components setup */
     ble_setup();
     esp_now_receiver_setup();
